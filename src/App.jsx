@@ -10,10 +10,11 @@ import DashboardPage from "./pages/DashboardPage";
 import MyUploadsPage from "./pages/MyUploadsPage";
 import ProfilePage from "./pages/ProfilePage";
 import PrivateRoute from "./components/PrivateRoute";
-import UploadDetails from "./pages/UploadDetails";
+import UploadPage from "./pages/UploadPage";
 import DashboardLayout from "./components/DashboardLayout";
 import AllUploadsPage from "./pages/AllUploadsPage";
-import SettingsPage from "./pages/SettingsPage"; // import this
+import SettingsPage from "./pages/SettingsPage";
+import UploadDetails from "./pages/UploadDetails";
 
 function App() {
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -30,6 +31,28 @@ function App() {
           <Route path="/" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/projects/create" element={<ProjectCreatePage />} />
+          <Route
+  path="/upload/:uploadId"
+  element={
+    <PrivateRoute>
+      <DashboardLayout>
+        <UploadDetails />
+      </DashboardLayout>
+    </PrivateRoute>
+  }
+/>
+
+
+          <Route
+            path="/uploads"
+            element={
+              <PrivateRoute>
+                <DashboardLayout>
+                  <UploadPage />
+                </DashboardLayout>
+              </PrivateRoute>
+            }
+          />
 
           {/* Protected Routes with Layout */}
           <Route
@@ -38,16 +61,6 @@ function App() {
               <PrivateRoute>
                 <DashboardLayout>
                   <DashboardPage />
-                </DashboardLayout>
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/upload/:upload_id"
-            element={
-              <PrivateRoute>
-                <DashboardLayout>
-                  <UploadDetails />
                 </DashboardLayout>
               </PrivateRoute>
             }

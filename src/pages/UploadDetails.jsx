@@ -1,115 +1,111 @@
-import { useEffect, useState } from 'react';
+// src/pages/UploadDetails.jsx
+import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Card, List, Typography, Skeleton, message } from 'antd';
-import api from '../api';
+import { message, Tabs, Table, Tag, Spin } from 'antd';
+import axios from 'axios';
 
-const { Title, Text } = Typography;
-
-function UploadDetails() {
-  const { upload_id } = useParams();
+const UploadDetails = () => {
+  const { uploadId } = useParams();
+  const [bugResults, setBugResults] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [upload, setUpload] = useState(null);
 
   useEffect(() => {
-    const fetchUploadDetails = async () => {
-      try {
-        const res = await api.get(`/upload/${upload_id}`);
-        setUpload(res.data);
-      } catch (err) {
-        console.error('Failed to load upload details.', err);
-        message.error('Failed to load upload details.');
-      } finally {
-        setLoading(false);
-      }
-    };
+    if (uploadId) {
+      fetchBugResults(uploadId);
+    }
+  }, [uploadId]);
 
-    fetchUploadDetails();
-  }, [upload_id]);
-
-  const getPriorityColor = (priority) => {
-    if (priority === 'High') return '#ff4d4f';
-    if (priority === 'Medium') return '#faad14';
-    if (priority === 'Low') return '#52c41a';
-    return '#000'; // fallback
+  const fetchBugResults = async (id) => {
+    try {
+      const response = await axios.get(`http://localhost:8080/file_bugs/${id}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      setBugResults(response.data.bugs || []);
+    } catch (error) {
+      console.error('Error fetching bug results:', error);
+      message.error('Failed to load bug results.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  if (loading || !upload) {
-    return <Skeleton active paragraph={{ rows: 10 }} />;
-  }
+  // Group bugs by file
+  const groupedBugs = bugResults.reduce((acc, bug) => {
+    const fileKey = `${bug.file_name}`;
+    if (!acc[fileKey]) {
+      acc[fileKey] = [];
+    }
+    acc[fileKey].push(bug);
+    return acc;
+  }, {});
+
+  // Table columns
+  const columns = [
+    {
+      title: 'Line',
+      dataIndex: 'line',
+      key: 'line',
+    },
+    {
+      title: 'Description',
+      dataIndex: 'description',
+      key: 'description',
+    },
+    {
+      title: 'Priority',
+      dataIndex: 'priority',
+      key: 'priority',
+      render: (priority) => {
+        let color = 'default';
+        if (priority === 'High') color = 'red';
+        else if (priority === 'Medium') color = 'orange';
+        else if (priority === 'Low') color = 'green';
+
+        return <Tag color={color}>{priority}</Tag>;
+      },
+    },
+  ];
+
+  const bugTabs = Object.keys(groupedBugs).map((fileKey) => ({
+    key: fileKey,
+    label: fileKey,
+    children: groupedBugs[fileKey].length === 0 ? (
+      <p>No bugs found for this file.</p>
+    ) : (
+      <Table
+        dataSource={groupedBugs[fileKey].map((bug, index) => ({ key: index, ...bug }))}
+        columns={columns}
+        pagination={{ pageSize: 5 }}
+        bordered
+      />
+    ),
+  }));
 
   return (
-    <div style={{ padding: '16px' }}>
-      <Title level={3}>Upload Details</Title>
+    <div className="p-6 max-w-5xl mx-auto">
+      <h1 className="text-3xl font-bold mb-6 text-center">🪲 Upload Details — Bugs</h1>
 
-      <Card style={{ marginBottom: '16px' }}>
-        <p><b>Description:</b> {upload.upload_description || 'No description provided'}</p>
-        <p><b>Uploaded by:</b> {upload.username || 'Unknown'}</p>
-        <p><b>Timestamp:</b> {new Date(upload.timestamp).toLocaleString()}</p>
-        <p><b>Number of Files:</b> {upload.num_files}</p>
-      </Card>
-
-      <Title level={4}>Files</Title>
-      <List
-        bordered
-        dataSource={upload.files}
-        renderItem={(fileItem) => (
-          <List.Item style={{ flexDirection: 'column', alignItems: 'flex-start', padding: '12px 16px' }}>
-            <Text strong>Filename: {fileItem.original_filename || fileItem.file}</Text>
-
-            {/* Sanity Checked Bugs */}
-            <div style={{ marginTop: '8px' }}>
-              <Text underline>Sanity Checked Bugs:</Text>
-              {fileItem.bugs_sanity_checked.length > 0 ? (
-                <ul>
-                  {fileItem.bugs_sanity_checked.map((bug, index) => (
-                    <li key={index}>
-                      {bug.description} — <b style={{ color: getPriorityColor(bug.priority) }}>
-                        {bug.priority}
-                      </b>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p>No sanity checked bugs.</p>
-              )}
-            </div>
-
-            {/* Original Bugs */}
-            <div style={{ marginTop: '8px' }}>
-              <Text underline>Original Bugs:</Text>
-              {fileItem.bugs_original.length > 0 ? (
-                <ul>
-                  {fileItem.bugs_original.map((bug, index) => (
-                    <li key={index}>
-                      {bug.description} — <b style={{ color: getPriorityColor(bug.priority) }}>
-                        {bug.priority}
-                      </b>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p>No original bugs.</p>
-              )}
-            </div>
-
-            {/* Optimizations */}
-            <div style={{ marginTop: '8px' }}>
-              <Text underline>Optimizations:</Text>
-              {fileItem.optimizations_sanity_checked.length > 0 ? (
-                <ul>
-                  {fileItem.optimizations_sanity_checked.map((opt, index) => (
-                    <li key={index}>{opt.reason}</li>
-                  ))}
-                </ul>
-              ) : (
-                <p>No optimizations found.</p>
-              )}
-            </div>
-          </List.Item>
-        )}
-      />
+      {loading ? (
+        <div className="flex justify-center items-center h-48">
+          <Spin size="large" />
+        </div>
+      ) : (
+        <>
+          {bugTabs.length === 0 ? (
+            <p>No bugs found for this upload.</p>
+          ) : (
+            <Tabs
+              defaultActiveKey={bugTabs[0]?.key}
+              type="card"
+              items={bugTabs}
+            />
+          )}
+        </>
+      )}
     </div>
   );
-}
+};
 
 export default UploadDetails;
