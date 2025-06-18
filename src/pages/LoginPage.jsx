@@ -14,18 +14,21 @@ function LoginPage() {
     setLoading(true);
     try {
       const res = await api.post('/login', values);
-      const { token, user_id, project_id } = res.data;
+      const { token, user_id, project_id, role } = res.data; // ✅ include role from response
+
+      // ✅ Store everything in localStorage
       localStorage.setItem('token', token);
       localStorage.setItem('user_id', user_id);
       localStorage.setItem('project_id', project_id);
+      localStorage.setItem('role', role); // ✅ now saved
 
       message.success('Login successful!');
-      setLoginError(''); // Clear error on success
+      setLoginError('');
       navigate('/dashboard');
     } catch (err) {
       const errorMsg = err.response?.data?.detail || 'Login failed.';
       message.error(errorMsg);
-      setLoginError(errorMsg); // Show below form
+      setLoginError(errorMsg);
     } finally {
       setLoading(false);
     }

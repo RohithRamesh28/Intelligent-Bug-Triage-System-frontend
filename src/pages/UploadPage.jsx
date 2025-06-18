@@ -1,11 +1,25 @@
-// src/pages/UploadPage.jsx
 import React, { useState, useEffect } from 'react';
-import { Upload, Button, message, Progress, Tabs, Table, Tag, Input } from 'antd';
+import {
+  Upload,
+  Button,
+  message,
+  Progress,
+  Tabs,
+  Table,
+  Tag,
+  Input,
+  Typography,
+  Space,
+  Alert,
+  Card,
+} from 'antd';
 import { InboxOutlined } from '@ant-design/icons';
 import axios from 'axios';
+import path from 'path-browserify';
 
 const { Dragger } = Upload;
 const { TextArea } = Input;
+const { Title } = Typography;
 
 const UploadPage = () => {
   const [fileList, setFileList] = useState([]);
@@ -15,112 +29,114 @@ const UploadPage = () => {
   const [status, setStatus] = useState('No upload started yet.');
   const [done, setDone] = useState(false);
   const [bugResults, setBugResults] = useState([]);
-  const [uploadDescription, setUploadDescription] = useState(''); // upload description state
+  const [uploadDescription, setUploadDescription] = useState('');
+  const [fileError, setFileError] = useState('');
+  const [descError, setDescError] = useState('');
 
-  // Prevent accidental reload
   useEffect(() => {
     const handleBeforeUnload = (e) => {
-      if (!done && uploadId) {
+      if (!done && uploading) {
         e.preventDefault();
-        e.returnValue = 'Are you sure you want to reload? Progress will not be saved.';
+        e.returnValue = 'You have an upload in progress. Reloading will cancel it.';
       }
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [done, uploadId]);
+  }, [done, uploading]);
 
-  // WebSocket hook
   useEffect(() => {
     if (!uploadId) return;
-
     const ws = new WebSocket(`ws://localhost:8080/ws/progress/${uploadId}`);
-
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.status) setStatus(data.status);
       if (data.progress !== undefined) setProgress(data.progress);
-
       if (data.status === 'DONE 🚀') {
         setDone(true);
         ws.close();
       }
     };
-
-    ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
-    };
-
+    ws.onerror = (err) => console.error('WebSocket error:', err);
     return () => ws.close();
   }, [uploadId]);
 
-  // After done → fetch bugs
   useEffect(() => {
     if (done && uploadId) {
       axios
         .get(`http://localhost:8080/file_bugs/${uploadId}`)
-        .then((response) => {
-          setBugResults(response.data.bugs || []);
+        .then((res) => {
+          setBugResults(res.data || []);
+          setUploadId(null);
+          setDone(false);
+          setProgress(0);
+          setStatus('No upload started yet.');
         })
-        .catch((error) => {
-          console.error('Error fetching bug results:', error);
-        });
+        .catch((err) => console.error('❌ Failed to fetch bugs:', err));
     }
   }, [done, uploadId]);
 
-  // Upload submit handler
   const handleSubmit = async () => {
+    let hasError = false;
+    setFileError('');
+    setDescError('');
+
     if (fileList.length === 0) {
-      message.error('Please select files first.');
-      return;
+      setFileError('Please upload at least one file or ZIP.');
+      hasError = true;
     }
+    if (!uploadDescription.trim()) {
+      setDescError('Please enter an upload description.');
+      hasError = true;
+    }
+    if (hasError) return;
+
+    setBugResults([]);
+    setUploadId(null);
+    setProgress(0);
+    setDone(false);
+    setStatus('Starting...');
 
     const formData = new FormData();
     fileList.forEach((file) => {
       formData.append('files', file.originFileObj);
     });
-    formData.append('upload_description', uploadDescription); // send upload description
+    formData.append('upload_description', uploadDescription);
 
     setUploading(true);
     try {
-      const response = await axios.post('http://localhost:8080/upload/', formData, {
+      const res = await axios.post('http://localhost:8080/upload/', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
       });
-
+      setUploadId(res.data.upload_id);
+      setStatus('Waiting for analysis...');
       message.success('Upload started!');
-      setUploadId(response.data.upload_id);
-    } catch (error) {
-      console.error('Upload failed:', error);
-      message.error('Upload failed.');
+    } catch (err) {
+      console.error(err);
+      message.error('Upload failed');
     } finally {
       setUploading(false);
     }
   };
 
-  // Bug results grouped by file
-  const groupedBugs = bugResults.reduce((acc, bug) => {
-    const fileKey = `${bug.file_name}`;
-    if (!acc[fileKey]) {
-      acc[fileKey] = [];
-    }
-    acc[fileKey].push(bug);
-    return acc;
-  }, {});
+  const groupedBugs = bugResults
+    .map(({ zip_name, file_path, bugs }) => {
+      const filename = path.basename(file_path);
+      const display = zip_name ? `${zip_name}/${filename}` : filename;
+      return { label: display, bugs: bugs || [] };
+    })
+    .sort((a, b) => b.bugs.length - a.bugs.length);
 
-  // Table columns
   const columns = [
     {
-      title: 'Line',
-      dataIndex: 'line',
-      key: 'line',
+      title: '#',
+      key: 'index',
+      render: (_, __, index) => index + 1,
     },
-    {
-      title: 'Description',
-      dataIndex: 'description',
-      key: 'description',
-    },
+    { title: 'Line', dataIndex: 'line', key: 'line' },
+    { title: 'Description', dataIndex: 'description', key: 'description' },
     {
       title: 'Priority',
       dataIndex: 'priority',
@@ -130,98 +146,93 @@ const UploadPage = () => {
         if (priority === 'High') color = 'red';
         else if (priority === 'Medium') color = 'orange';
         else if (priority === 'Low') color = 'green';
-
         return <Tag color={color}>{priority}</Tag>;
       },
     },
   ];
 
-  const bugTabs = Object.keys(groupedBugs).map((fileKey) => ({
-    key: fileKey,
-    label: fileKey,
-    children: groupedBugs[fileKey].length === 0 ? (
-      <p>No bugs found for this file.</p>
-    ) : (
-      <Table
-        dataSource={groupedBugs[fileKey].map((bug, index) => ({ key: index, ...bug }))}
-        columns={columns}
-        pagination={{ pageSize: 20 }}
-        bordered
-      />
-    ),
+  const bugTabs = groupedBugs.map(({ label, bugs }) => ({
+    key: label,
+    label,
+    children:
+      bugs.length === 0 ? (
+        <Alert message="No bugs found in this file." type="info" showIcon />
+      ) : (
+        <Table
+          dataSource={bugs.map((b, i) => ({ key: i, ...b }))}
+          columns={columns}
+          pagination={{ pageSize: 10 }}
+          bordered
+        />
+      ),
   }));
 
-  // Upload config
   const uploadProps = {
     multiple: true,
     fileList,
-    onChange: ({ fileList: newFileList }) => setFileList(newFileList),
+    onChange: ({ fileList: newList }) => setFileList(newList),
     beforeUpload: () => false,
-    accept: '.zip,.js,.jsx,.py,.ts,.tsx',
+    accept: '.zip,.js,.jsx,.ts,.tsx,.py',
     listType: 'text',
   };
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6 text-center">📂 File Upload & Bug Analysis</h1>
-
-      <Dragger {...uploadProps} style={{ padding: '20px' }}>
-        <p className="ant-upload-drag-icon">
-          <InboxOutlined />
-        </p>
-        <p className="ant-upload-text">Click or drag ZIP / Code files here</p>
-        <p className="ant-upload-hint">Supports ZIP, JS, TS, JSX, PY files</p>
-      </Dragger>
-
-      {/* Upload Description */}
-      <div className="mt-4">
-        <label className="block mb-1 font-semibold">Upload Description</label>
-        <TextArea
-          rows={3}
-          placeholder="Enter a description for this upload..."
-          value={uploadDescription}
-          onChange={(e) => setUploadDescription(e.target.value)}
-        />
-      </div>
-
-      {/* Submit Button */}
-      <Button
-        type="primary"
-        block
-        size="large"
-        onClick={handleSubmit}
-        disabled={fileList.length === 0 || uploading || uploadId !== null}
-        loading={uploading}
-        className="mt-4"
-      >
-        {uploading ? 'Uploading...' : 'Submit for Analysis'}
-      </Button>
-
-      {/* Progress */}
-      {uploadId && (
-        <>
-          <div className="mt-6">
-            <h2 className="text-xl font-semibold mb-2">Upload Progress</h2>
-            <Progress percent={progress} status={done ? 'success' : 'active'} />
-            <p className="mt-2 text-lg">Status: <strong>{status}</strong></p>
+    <div className="max-w-5xl mx-auto py-8 px-4">
+      <Card bordered={false} style={{ marginBottom: '24px' }}>
+        <Title level={2} className="text-center">Upload Files for Bug Analysis</Title>
+        <Space direction="vertical" size="large" style={{ width: '100%' }}>
+          <div>
+            <Dragger
+              {...uploadProps}
+              disabled={uploading || (uploadId && !done)}
+              style={{ padding: '20px' }}
+            >
+              <p className="ant-upload-drag-icon">
+                <InboxOutlined />
+              </p>
+              <p className="ant-upload-text">Click or drag ZIP / code files here</p>
+              <p className="ant-upload-hint">Supports ZIP, JS, TS, JSX, PY files</p>
+            </Dragger>
+            {fileError && <Alert message={fileError} type="error" showIcon className="mt-2" />}
           </div>
 
-          {/* Bug Results */}
-          {done && (
-            <div className="mt-8">
-              <h2 className="text-xl font-bold mb-4">🪲 Bug Results</h2>
-              {bugTabs.length === 0 ? (
-                <p>No bugs found for this upload.</p>
-              ) : (
-                <Tabs
-                  defaultActiveKey={bugTabs[0]?.key}
-                  type="card"
-                  items={bugTabs}
-                />
-              )}
+          <div>
+            <label className="block mb-1 font-medium">Upload Description <span className="text-red-500">*</span></label>
+            <TextArea
+              rows={3}
+              placeholder="Describe this upload..."
+              value={uploadDescription}
+              disabled={uploading || (uploadId && !done)}
+              onChange={(e) => setUploadDescription(e.target.value)}
+            />
+            {descError && <Alert message={descError} type="error" showIcon className="mt-2" />}
+          </div>
+
+          <Button
+            type="primary"
+            block
+            size="large"
+            onClick={handleSubmit}
+            disabled={fileList.length === 0 || uploading || (uploadId && !done)}
+            loading={uploading}
+          >
+            {uploading ? 'Uploading...' : 'Submit for Analysis'}
+          </Button>
+
+          {uploadId && (
+            <div className="space-y-2">
+              <Title level={4}>Upload Progress</Title>
+              <Progress percent={progress} status={done ? 'success' : 'active'} />
+              <p>Status: <strong>{status}</strong></p>
             </div>
           )}
-        </>
+        </Space>
+      </Card>
+
+      {bugTabs.length > 0 && (
+        <Card title="Bug Results" bordered={false}>
+          <Tabs defaultActiveKey={bugTabs[0].key} type="card" items={bugTabs} />
+        </Card>
       )}
     </div>
   );

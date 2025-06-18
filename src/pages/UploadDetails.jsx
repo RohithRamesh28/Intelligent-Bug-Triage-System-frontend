@@ -1,13 +1,30 @@
-// src/pages/UploadDetails.jsx
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { message, Tabs, Table, Tag, Spin } from 'antd';
+import { useParams, useNavigate } from 'react-router-dom';
+import {
+  message,
+  Tabs,
+  Table,
+  Tag,
+  Spin,
+  Typography,
+  theme,
+  Button,
+  Alert,
+  Card,
+} from 'antd';
+import { ArrowLeftOutlined, DownloadOutlined } from '@ant-design/icons';
 import axios from 'axios';
+import Papa from 'papaparse';
+import path from 'path-browserify';
 
-const UploadDetails = () => {
+const { Title, Paragraph } = Typography;
+
+function UploadDetails() {
   const { uploadId } = useParams();
+  const navigate = useNavigate();
   const [bugResults, setBugResults] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { token } = theme.useToken();
 
   useEffect(() => {
     if (uploadId) {
@@ -22,7 +39,7 @@ const UploadDetails = () => {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
       });
-      setBugResults(response.data.bugs || []);
+      setBugResults(response.data || []);
     } catch (error) {
       console.error('Error fetching bug results:', error);
       message.error('Failed to load bug results.');
@@ -31,18 +48,42 @@ const UploadDetails = () => {
     }
   };
 
-  // Group bugs by file
-  const groupedBugs = bugResults.reduce((acc, bug) => {
-    const fileKey = `${bug.file_name}`;
-    if (!acc[fileKey]) {
-      acc[fileKey] = [];
-    }
-    acc[fileKey].push(bug);
-    return acc;
-  }, {});
+  const handleDownloadCSV = () => {
+    const allBugs = [];
+    bugResults.forEach(({ file_path, bugs }) => {
+      const file = path.basename(file_path);
+      bugs.forEach((bug) => {
+        allBugs.push({
+          File: file,
+          Line: bug.line,
+          Description: bug.description,
+          Priority: bug.priority,
+        });
+      });
+    });
+    const csv = Papa.unparse(allBugs);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', `upload_${uploadId}_bugs.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
-  // Table columns
+  const groupedBugs = bugResults
+    .map(({ file_path, bugs }) => {
+      const label = path.basename(file_path); // ✅ Only file name
+      return { label, bugs: bugs || [] };
+    })
+    .sort((a, b) => b.bugs.length - a.bugs.length);
+
   const columns = [
+    {
+      title: '#',
+      key: 'index',
+      render: (_, __, index) => index + 1,
+    },
     {
       title: 'Line',
       dataIndex: 'line',
@@ -62,20 +103,19 @@ const UploadDetails = () => {
         if (priority === 'High') color = 'red';
         else if (priority === 'Medium') color = 'orange';
         else if (priority === 'Low') color = 'green';
-
         return <Tag color={color}>{priority}</Tag>;
       },
     },
   ];
 
-  const bugTabs = Object.keys(groupedBugs).map((fileKey) => ({
-    key: fileKey,
-    label: fileKey,
-    children: groupedBugs[fileKey].length === 0 ? (
-      <p>No bugs found for this file.</p>
+  const bugTabs = groupedBugs.map(({ label, bugs }) => ({
+    key: label,
+    label,
+    children: bugs.length === 0 ? (
+      <Alert message="No bugs found for this file." type="info" showIcon />
     ) : (
       <Table
-        dataSource={groupedBugs[fileKey].map((bug, index) => ({ key: index, ...bug }))}
+        dataSource={bugs.map((bug, i) => ({ key: i, ...bug }))}
         columns={columns}
         pagination={{ pageSize: 5 }}
         bordered
@@ -84,28 +124,58 @@ const UploadDetails = () => {
   }));
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6 text-center">🪲 Upload Details — Bugs</h1>
+    <div className="max-w-5xl mx-auto py-8 px-4">
+      <Button
+        icon={<ArrowLeftOutlined />}
+        onClick={() => navigate(-1)}
+        style={{ marginBottom: '16px' }}
+      >
+        Back
+      </Button>
 
-      {loading ? (
-        <div className="flex justify-center items-center h-48">
-          <Spin size="large" />
+      <Card bordered={false}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Title level={2} style={{ margin: 0, color: token.colorText }}>
+            Upload Details — Bugs
+          </Title>
+          <Button
+            type="primary"
+            icon={<DownloadOutlined />}
+            onClick={handleDownloadCSV}
+            size="middle"
+            style={{
+              backgroundColor: '#1890ff',
+              borderColor: '#1890ff',
+              fontWeight: '500',
+              padding: '0 20px',
+              height: '36px',
+              display: 'flex',
+              alignItems: 'center',
+            }}
+            disabled={bugResults.length === 0}
+          >
+            Download CSV
+          </Button>
         </div>
-      ) : (
-        <>
-          {bugTabs.length === 0 ? (
-            <p>No bugs found for this upload.</p>
-          ) : (
-            <Tabs
-              defaultActiveKey={bugTabs[0]?.key}
-              type="card"
-              items={bugTabs}
-            />
-          )}
-        </>
-      )}
+
+        {loading ? (
+          <div style={{ height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Spin size="large" />
+          </div>
+        ) : groupedBugs.length === 0 ? (
+          <Paragraph style={{ color: token.colorText }}>
+            No bugs found for this upload.
+          </Paragraph>
+        ) : (
+          <Tabs
+            defaultActiveKey={groupedBugs[0]?.label}
+            type="card"
+            items={bugTabs}
+          />
+        )}
+      </Card>
     </div>
   );
-};
+}
 
 export default UploadDetails;

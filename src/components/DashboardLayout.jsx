@@ -8,7 +8,7 @@ import {
   SettingOutlined,
 } from '@ant-design/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 
 const { Header, Sider, Content } = Layout;
 
@@ -21,6 +21,7 @@ function DashboardLayout({ children }) {
     localStorage.removeItem('token');
     localStorage.removeItem('user_id');
     localStorage.removeItem('project_id');
+    localStorage.removeItem('role'); // ✅ Also remove role
     navigate('/');
   };
 
@@ -34,7 +35,32 @@ function DashboardLayout({ children }) {
     }
   };
 
-  // Map location.pathname to current menu key
+  // Get role from localStorage (default to developer)
+  const role = localStorage.getItem('role') || 'developer';
+
+  // Determine visible menu items based on role
+  const mainMenuItems = useMemo(() => {
+    const items = [
+      { key: 'profile', icon: <UserOutlined />, label: 'Profile' },
+      { key: 'dashboard', icon: <DashboardOutlined />, label: 'Dashboard' },
+    ];
+
+    if (role === 'developer') {
+      items.push(
+        { key: 'uploads', icon: <UploadOutlined />, label: 'Uploads' },
+        { key: 'my-uploads', icon: <FolderOpenOutlined />, label: 'My Uploads' }
+      );
+    }
+
+    if (role === 'team_lead') {
+      items.push(
+        { key: 'all-uploads', icon: <FolderOpenOutlined />, label: 'All Uploads' }
+      );
+    }
+
+    return items;
+  }, [role]);
+
   const currentPath = location.pathname;
   const currentPage = currentPath.startsWith('/profile')
     ? 'profile'
@@ -42,11 +68,13 @@ function DashboardLayout({ children }) {
     ? 'uploads'
     : currentPath.startsWith('/my-uploads')
     ? 'my-uploads'
+    : currentPath.startsWith('/all-uploads')
+    ? 'all-uploads'
     : currentPath.startsWith('/dashboard')
     ? 'dashboard'
     : currentPath.startsWith('/settings')
     ? 'settings'
-    : ''; // fallback
+    : '';
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
@@ -64,46 +92,39 @@ function DashboardLayout({ children }) {
           zIndex: 1000,
           display: 'flex',
           flexDirection: 'column',
-          justifyContent: 'flex-start', 
+          justifyContent: 'flex-start',
         }}
       >
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative' }}>
           <div style={{ color: 'white', padding: 16, textAlign: 'center', fontWeight: 'bold' }}>
             Bug Triage
           </div>
-<Menu
-  theme="dark"
-  mode="inline"
-  selectedKeys={[currentPage]}
-  onClick={handleMenuClick}
-  style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
-  items={[
-    {
-      type: 'group',
-      label: '',
-      children: [
-        { key: 'profile', icon: <UserOutlined />, label: 'Profile' },
-        { key: 'dashboard', icon: <DashboardOutlined />, label: 'Dashboard' },
-        { key: 'uploads', icon: <UploadOutlined />, label: 'Uploads' },
-        { key: 'my-uploads', icon: <FolderOpenOutlined />, label: 'My Uploads' },
-      ],
-    },
-    {
-      type: 'group',
-      label: '',
-      children: [
-        { key: 'settings', icon: <SettingOutlined />, label: 'Settings' },
-        { key: 'logout', icon: <LogoutOutlined />, label: 'Logout' },
-      ],
-    },
-  ]}
-/>
-</div>
+          <Menu
+            theme="dark"
+            mode="inline"
+            selectedKeys={[currentPage]}
+            onClick={handleMenuClick}
+            style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
+            items={[
+              {
+                type: 'group',
+                label: '',
+                children: mainMenuItems,
+              },
+              {
+                type: 'group',
+                label: '',
+                children: [
+                  { key: 'settings', icon: <SettingOutlined />, label: 'Settings' },
+                  { key: 'logout', icon: <LogoutOutlined />, label: 'Logout' },
+                ],
+              },
+            ]}
+          />
+        </div>
       </Sider>
       <Layout style={{ marginLeft: hovering ? 200 : 80, transition: 'margin-left 0.2s' }}>
-        <Content style={{ margin: '16px' }}>
-          {children}
-        </Content>
+        <Content style={{ margin: '16px' }}>{children}</Content>
       </Layout>
     </Layout>
   );

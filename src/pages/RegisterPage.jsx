@@ -30,6 +30,7 @@ function RegisterPage() {
         username: values.username,
         password: values.password,
         project_id: values.project_id,
+        role: values.role, // ✅ Send role to backend
       });
       message.success("Registration successful! Please login.");
       navigate("/");
@@ -47,21 +48,23 @@ function RegisterPage() {
         <Form.Item
           name="username"
           label="Username"
-          rules={[{ required: true }]}
+          rules={[{ required: true, message: "Please enter a username" }]}
         >
           <Input />
         </Form.Item>
+
         <Form.Item
           name="password"
           label="Password"
-          rules={[{ required: true }]}
+          rules={[{ required: true, message: "Please enter a password" }]}
         >
           <Input.Password />
         </Form.Item>
+
         <Form.Item
           name="project_id"
           label="Select Project"
-          rules={[{ required: true }]}
+          rules={[{ required: true, message: "Please select a project" }]}
         >
           <Select placeholder="Select a Project">
             {projects.map((project) => (
@@ -74,16 +77,28 @@ function RegisterPage() {
             ))}
           </Select>
         </Form.Item>
+
+        <Form.Item
+          name="role"
+          label="Select Role"
+          rules={[{ required: true, message: "Please select a role" }]}
+        >
+          <Select placeholder="Select a Role">
+            <Select.Option value="developer">Developer</Select.Option>
+            <Select.Option value="team_lead">Team Lead</Select.Option>
+          </Select>
+        </Form.Item>
+
         <Form.Item>
           <Button type="primary" htmlType="submit" loading={loading} block>
             Register
           </Button>
         </Form.Item>
       </Form>
-      <div style={{ textAlign: 'center', marginTop: 16 }}>
-  Want to create a new Project?{' '}
-  <Link to="/projects/create">Click here</Link>
-</div>
+
+      <div style={{ textAlign: "center", marginTop: 16 }}>
+        Want to create a new Project? <Link to="/projects/create">Click here</Link>
+      </div>
 
       <div style={{ textAlign: "center", marginTop: 16 }}>
         Already have an account? <Link to="/">Login</Link>
