@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Form, Input, Button, message as antMessage, Skeleton, Typography } from 'antd';
+import { FiUser } from 'react-icons/fi';
 import api from '../api';
 
 const { Title, Text } = Typography;
@@ -25,7 +26,6 @@ function ProfilePage() {
         setLoading(false);
       }
     };
-
     fetchProfile();
   }, [form]);
 
@@ -52,14 +52,8 @@ function ProfilePage() {
 
       setStatusMessage(newMessage);
       setStatusType('success');
-
-      setProfile((prev) => ({
-        ...prev,
-        username: values.new_username,
-      }));
-      form.setFieldsValue({
-        new_password: '',
-      });
+      setProfile((prev) => ({ ...prev, username: values.new_username }));
+      form.setFieldsValue({ new_password: '' });
     } catch (err) {
       const errorMsg = err.response?.data?.detail || 'Profile update failed.';
       setStatusMessage(errorMsg);
@@ -68,64 +62,74 @@ function ProfilePage() {
   };
 
   return (
-    <div style={{ maxWidth: 600, margin: '0 auto', padding: '24px' }}>
-      {loading ? (
-        <Skeleton active paragraph={{ rows: 4 }} />
-      ) : (
-        <>
-          <Title level={2}>My Profile</Title>
-          <Text type="secondary">Manage your username and password for this project.</Text>
+    <div
+      style={{
+        minHeight: '100vh',
+        padding: '60px 20px',
+        background: 'linear-gradient(135deg, #f0f5ff, #ffffff)'
+      }}
+    >
+      <div style={{ maxWidth: 700, margin: '0 auto' }}>
+        {loading ? (
+          <Skeleton active paragraph={{ rows: 4 }} />
+        ) : (
+          <>
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ fontSize: 28, fontWeight: 600, color: '#3f3f3f', display: 'flex', alignItems: 'center' }}>
+                <FiUser size={22} style={{ marginRight: 10, color: '#1890ff' }} /> My Profile
+              </div>
+              <Text type="secondary">
+                Manage your username and password for this project.
+              </Text>
+            </div>
 
-          {/* Inline status message */}
-          {statusMessage && (
-            <Text
-              type={statusType === 'success' ? 'success' : 'danger'}
-              style={{ display: 'block', marginBottom: 16 }}
+            {statusMessage && (
+              <Text
+                type={statusType === 'success' ? 'success' : 'danger'}
+                style={{ display: 'block', marginBottom: 16 }}
+              >
+                {statusMessage}
+              </Text>
+            )}
+
+            <Form
+              form={form}
+              layout="vertical"
+              onFinish={onFinish}
+              onValuesChange={() => setStatusMessage('')}
             >
-              {statusMessage}
-            </Text>
-          )}
+              <Form.Item label="Project Name">
+                <Input value={profile?.project_name} disabled />
+              </Form.Item>
 
-          <Form
-            form={form}
-            layout="vertical"
-            style={{ marginTop: '24px' }}
-            onFinish={onFinish}
-            onValuesChange={() => {
-              setStatusMessage('');
-            }}
-          >
-            <Form.Item label="Project Name">
-              <Input value={profile?.project_name} disabled />
-            </Form.Item>
+              <Form.Item
+                name="new_username"
+                label="Username"
+                rules={[
+                  { required: true, message: 'Please enter your username.' },
+                  { min: 3, message: 'Username must be at least 3 characters.' },
+                ]}
+              >
+                <Input />
+              </Form.Item>
 
-            <Form.Item
-              name="new_username"
-              label="Username"
-              rules={[
-                { required: true, message: 'Please enter your username.' },
-                { min: 3, message: 'Username must be at least 3 characters.' },
-              ]}
-            >
-              <Input />
-            </Form.Item>
+              <Form.Item
+                name="new_password"
+                label="New Password"
+                rules={[{ min: 6, message: 'Password must be at least 6 characters.' }]}
+              >
+                <Input.Password placeholder="Leave blank to keep current password" />
+              </Form.Item>
 
-            <Form.Item
-              name="new_password"
-              label="New Password"
-              rules={[{ min: 6, message: 'Password must be at least 6 characters.' }]}
-            >
-              <Input.Password placeholder="Leave blank to keep current password" />
-            </Form.Item>
-
-            <Form.Item>
-              <Button type="primary" htmlType="submit">
-                Update Profile
-              </Button>
-            </Form.Item>
-          </Form>
-        </>
-      )}
+              <Form.Item>
+                <Button type="primary" htmlType="submit">
+                  Update Profile
+                </Button>
+              </Form.Item>
+            </Form>
+          </>
+        )}
+      </div>
     </div>
   );
 }
