@@ -24,12 +24,16 @@ function UploadDetails() {
   const navigate = useNavigate();
   const [bugResults, setBugResults] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [uploadDescription, setUploadDescription] = useState('');
+  const [timestamp, setTimestamp] = useState('');
   const { token } = theme.useToken();
 
   useEffect(() => {
     if (uploadId) {
       fetchBugResults(uploadId);
+      fetchUploadMetadata();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uploadId]);
 
   const fetchBugResults = async (id) => {
@@ -39,12 +43,31 @@ function UploadDetails() {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
       });
+
       setBugResults(response.data || []);
     } catch (error) {
       console.error('Error fetching bug results:', error);
       message.error('Failed to load bug results.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchUploadMetadata = async () => {
+    try {
+      const res = await axios.get('http://localhost:8080/project/my-uploads', {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      const uploads = res.data.uploads || [];
+      const match = uploads.find((u) => u.upload_id === uploadId);
+      if (match) {
+        setUploadDescription(match.upload_description || '');
+        setTimestamp(match.created_at || '');
+      }
+    } catch (err) {
+      console.error('Failed to fetch upload metadata:', err);
     }
   };
 
@@ -70,13 +93,15 @@ function UploadDetails() {
     link.click();
     document.body.removeChild(link);
   };
+
   const stripUUID = (filename) => {
-  const parts = filename.split('_');
-  return parts.length > 1 ? parts.slice(1).join('_') : filename;
-};
+    const parts = filename.split('_');
+    return parts.length > 1 ? parts.slice(1).join('_') : filename;
+  };
+
   const groupedBugs = bugResults
     .map(({ file_path, bugs }) => {
-      const label = stripUUID(path.basename(file_path)); 
+      const label = stripUUID(path.basename(file_path));
       return { label, bugs: bugs || [] };
     })
     .sort((a, b) => b.bugs.length - a.bugs.length);
@@ -114,16 +139,17 @@ function UploadDetails() {
   const bugTabs = groupedBugs.map(({ label, bugs }) => ({
     key: label,
     label,
-    children: bugs.length === 0 ? (
-      <Alert message="No bugs found for this file." type="info" showIcon />
-    ) : (
-      <Table
-        dataSource={bugs.map((bug, i) => ({ key: i, ...bug }))}
-        columns={columns}
-        pagination={{ pageSize: 5 }}
-        bordered
-      />
-    ),
+    children:
+      bugs.length === 0 ? (
+        <Alert message="No bugs found for this file." type="info" showIcon />
+      ) : (
+        <Table
+          dataSource={bugs.map((bug, i) => ({ key: i, ...bug }))}
+          columns={columns}
+          pagination={{ pageSize: 5 }}
+          bordered
+        />
+      ),
   }));
 
   return (
@@ -137,10 +163,26 @@ function UploadDetails() {
       </Button>
 
       <Card variant="borderless">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Title level={2} style={{ margin: 0, color: token.colorText }}>
-            Upload Details — Bugs
-          </Title>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: 8,
+          }}
+        >
+          <div>
+            <Title level={2} style={{ margin: 0, color: token.colorText }}>
+              {uploadDescription ? `Upload: ${uploadDescription}` : 'Upload Details'}
+            </Title>
+            {timestamp && (
+              <Paragraph style={{ color: '#8c8c8c', marginBottom: 0 }}>
+                Uploaded on {new Date(timestamp).toLocaleString()}
+              </Paragraph>
+            )}
+          </div>
+
           <Button
             type="primary"
             icon={<DownloadOutlined />}
@@ -162,7 +204,14 @@ function UploadDetails() {
         </div>
 
         {loading ? (
-          <div style={{ height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div
+            style={{
+              height: '200px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
             <Spin size="large" />
           </div>
         ) : groupedBugs.length === 0 ? (

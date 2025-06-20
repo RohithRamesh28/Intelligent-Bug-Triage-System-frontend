@@ -49,6 +49,7 @@ function LoginPage() {
       localStorage.setItem("user_id", user_id);
       localStorage.setItem("project_id", project_id);
       localStorage.setItem("role", role);
+      localStorage.setItem("username", res.data.username);
 
       message.success("Login successful!");
       setLoginError("");

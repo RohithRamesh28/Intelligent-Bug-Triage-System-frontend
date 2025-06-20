@@ -1,6 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
+import { ResponsiveContainer } from "recharts";
 
-import { Spin, Card, Row, Col, Table, Button, Typography, message } from "antd";
+import {
+  Spin,
+  Card,
+  Row,
+  Col,
+  Table,
+  Button,
+  Typography,
+  message,
+} from "antd";
 import {
   PieChart,
   Pie,
@@ -17,7 +27,7 @@ import { useNavigate } from "react-router-dom";
 import { TeamOutlined } from "@ant-design/icons";
 import api from "../api";
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
 const COLORS = ["#ff4d4f", "#faad14", "#52c41a"];
 const CHART_COLORS = ["#69c0ff", "#73d13d", "#ffc53d", "#ff85c0"];
 
@@ -26,9 +36,6 @@ function Dashboard() {
   const [uploads, setUploads] = useState([]);
   const [userIdToNameMap, setUserIdToNameMap] = useState({});
   const [userCounts, setUserCounts] = useState({ developers: 0, teamLeads: 0 });
-  const [projectName, setProjectName] = useState(
-    localStorage.getItem("project_name") || "Current Project"
-  );
 
   const navigate = useNavigate();
   const userId = localStorage.getItem("user_id");
@@ -61,16 +68,8 @@ function Dashboard() {
             teamLeads: statsRes.data.team_leads,
           });
         }
-
-        const projectRes = await api.get(`/project/${projectId}`);
-        const name = projectRes.data.project_name;
-        if (name) {
-          setProjectName(name);
-          localStorage.setItem("project_name", name);
-        }
       } catch (err) {
-        console.error("Dashboard fetch error:", err);
-        message.error("Failed to load dashboard.");
+        message.error("Failed to load dashboard.", err);
       } finally {
         setLoading(false);
       }
@@ -105,7 +104,7 @@ function Dashboard() {
   const recentUploads = useMemo(() => {
     return [...userUploads]
       .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-      .slice(0, 5);
+      .slice(0, 4);
   }, [userUploads]);
 
   const uploadsBarData = useMemo(() => {
@@ -131,216 +130,188 @@ function Dashboard() {
     [highBugs, mediumBugs, lowBugs]
   );
 
-  return (
+  return loading ? (
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        height: "60vh",
+      }}
+    >
+      <Spin size="large" tip="Loading Dashboard..." />
+    </div>
+  ) : (
     <>
-      {loading ? (
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            height: "60vh",
-          }}
-        >
-          <Spin size="large" tip="Loading Dashboard..." />
-        </div>
-      ) : (
-        <>
-          <Row style={{ marginBottom: 24 }}>
-            <Col xs={24}>
-              <Card
-                size="small"
-                variant="borderless"
-                style={{ backgroundColor: "#f0f5ff" }}
-              >
-                <Title level={4}>Project: {projectName}</Title>
-              </Card>
-            </Col>
-          </Row>
+      <Row gutter={[24, 24]}>
+        <Col xs={24} sm={12} md={8} lg={6}>
+          <Card title="Total Uploads" style={{ backgroundColor: "#e6fffb" }}>
+            <Title level={2}>
+              {totalUploads > 0 ? totalUploads : <Text type="secondary">No Uploads yet</Text>}
+            </Title>
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={8} lg={6}>
+          <Card title="High Priority Bugs" style={{ backgroundColor: "#fff1f0" }}>
+            <Title level={2}>
+              {highBugs > 0 ? highBugs : <Text type="secondary">No Bugs yet</Text>}
+            </Title>
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={8} lg={6}>   
+          <Card title="Medium Priority Bugs" style={{ backgroundColor: "#fffbe6" }}>
+            <Title level={2}>
+              {mediumBugs > 0 ? mediumBugs : <Text type="secondary">No Bugs yet</Text>}
+            </Title>
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={8} lg={6}>
+          <Card title="Low Priority Bugs" style={{ backgroundColor: "#f6ffed" }}>
+            <Title level={2}>
+              {lowBugs > 0 ? lowBugs : <Text type="secondary">No Bugs yet</Text>}
+            </Title>
+          </Card>
+        </Col>
+      </Row>
 
-          <Row gutter={[24, 24]}>
-            <Col xs={24} sm={12} md={8} lg={6}>
-              <Card
-                title="Total Uploads"
-                style={{ backgroundColor: "#e6fffb" }}
-              >
-                <Title level={2}>{totalUploads}</Title>
-              </Card>
-            </Col>
-            <Col xs={24} sm={12} md={8} lg={6}>
-              <Card
-                title="High Priority Bugs"
-                style={{ backgroundColor: "#fff1f0" }}
-              >
-                <Title level={2}>{highBugs}</Title>
-              </Card>
-            </Col>
-            <Col xs={24} sm={12} md={8} lg={6}>
-              <Card
-                title="Medium Priority Bugs"
-                style={{ backgroundColor: "#fffbe6" }}
-              >
-                <Title level={2}>{mediumBugs}</Title>
-              </Card>
-            </Col>
-            <Col xs={24} sm={12} md={8} lg={6}>
-              <Card
-                title="Low Priority Bugs"
-                style={{ backgroundColor: "#f6ffed" }}
-              >
-                <Title level={2}>{lowBugs}</Title>
-              </Card>
-            </Col>
-          </Row>
-
-          <Row gutter={[24, 24]} style={{ marginTop: 24 }}>
-            <Col xs={24} md={8}>
-              <Card title="Bugs by Priority">
-                <PieChart width={300} height={250}>
+      <Row gutter={[24, 24]} style={{ marginTop: 24 }}>
+        <Col xs={24} md={role === "team_lead" ? 8 : 12}>
+          <Card title="Bugs by Priority">
+            {highBugs + mediumBugs + lowBugs === 0 ? (
+              <div style={{ padding: 32, textAlign: "center" }}>
+                <Text type="secondary">No data to display</Text>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={250}>
+                <PieChart>
                   <Pie
                     data={bugsPieData}
-                    cx="50%"
+                    cx="40%"
                     cy="50%"
-                    labelLine={false}
                     outerRadius={80}
                     fill="#8884d8"
                     dataKey="value"
                     label={({ name, value }) => `${name}: ${value}`}
                   >
                     {bugsPieData.map((entry, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={COLORS[index % COLORS.length]}
-                      />
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
+                  <Legend layout="vertical" align="right" verticalAlign="middle" />
                   <ReTooltip />
-                  <Legend />
                 </PieChart>
-              </Card>
-            </Col>
+              </ResponsiveContainer>
+            )}
+          </Card>
+        </Col>
 
-            <Col xs={24} md={8}>
-              <Card title="Uploads per User">
-                <BarChart width={300} height={250} data={uploadsBarData}>
+        <Col xs={24} md={role === "team_lead" ? 8 : 12}>
+          <Card title="Uploads per User">
+            {uploadsBarData.length === 0 ? (
+              <div style={{ padding: 32, textAlign: "center" }}>
+                <Text type="secondary">No uploads yet</Text>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={250}>
+                <BarChart data={uploadsBarData}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="user" />
                   <YAxis />
                   <ReTooltip />
-                  <Legend />
+                  <Legend layout="vertical" align="right" verticalAlign="middle" />
                   <Bar dataKey="uploads">
                     {uploadsBarData.map((entry, index) => (
-                      <Cell
-                        key={`bar-${index}`}
-                        fill={CHART_COLORS[index % CHART_COLORS.length]}
-                      />
+                      <Cell key={`bar-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                     ))}
                   </Bar>
                 </BarChart>
-              </Card>
-            </Col>
-
-            {role === "team_lead" && (
-              <Col xs={24} md={8}>
-                <Card
-                  title={
-                    <span>
-                      <TeamOutlined /> Team Overview
-                    </span>
-                  }
-                  className="team-overview-card"
-                  style={{
-                    backgroundColor: "#f0e9ff",
-                    height: "100%",
-                    border: "1px solid #d3adf7",
-                    boxShadow: "0 4px 12px rgba(108, 0, 255, 0.1)",
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: 15,
-                      color: "#3f3f3f",
-                      padding: "12px 20px",
-                    }}
-                  >
-                    <p>
-                      <strong>Developers:</strong> {userCounts.developers}
-                    </p>
-                    <p>
-                      <strong>Team Leads:</strong> {userCounts.teamLeads}
-                    </p>
-                  </div>
-                </Card>
-              </Col>
+              </ResponsiveContainer>
             )}
-          </Row>
-
-          <Card title="Recent Uploads" style={{ marginTop: 24 }}>
-            <Table
-              rowKey="upload_id"
-              dataSource={recentUploads}
-              pagination={false}
-              size="middle"
-              bordered
-              onRow={(record) => ({
-                onClick: () => navigate(`/upload/${record.upload_id}`),
-                style: { cursor: "pointer" },
-              })}
-              columns={[
-                {
-                  title: "Description",
-                  dataIndex: "upload_description",
-                  key: "desc",
-                  render: (text) => text || <i>No description</i>,
-                },
-                {
-                  title: "User",
-                  dataIndex: "username",
-                  key: "user",
-                  render: (u, row) =>
-                    u || userIdToNameMap[row.user_id] || <i>Unknown</i>,
-                },
-                {
-                  title: "Filename",
-                  dataIndex: "original_filename",
-                  key: "file",
-                },
-                {
-                  title: "Files",
-                  dataIndex: "num_files",
-                  key: "files",
-                  align: "center",
-                },
-                {
-                  title: "Uploaded",
-                  dataIndex: "timestamp",
-                  key: "time",
-                  render: (t) =>
-                    new Date(t).toLocaleString("en-IN", {
-                      timeZone: "Asia/Kolkata",
-                      dateStyle: "medium",
-                      timeStyle: "short",
-                    }),
-                },
-              ]}
-            />
           </Card>
+        </Col>
 
-          {role === "team_lead" && (
-            <Row justify="center" style={{ marginTop: 24 }}>
-              <Col>
-                <Button
-                  type="primary"
-                  size="large"
-                  onClick={() => navigate("/all-uploads")}
-                >
-                  View All Uploads
-                </Button>
-              </Col>
-            </Row>
-          )}
-        </>
-      )}
+        {role === "team_lead" && (
+          <Col xs={24} md={8}>
+            <Card
+              title={<span><TeamOutlined /> Team Overview</span>}
+              style={{
+                backgroundColor: "#f0e9ff",
+                height: "100%",
+                border: "1px solid #d3adf7",
+                boxShadow: "0 4px 12px rgba(108, 0, 255, 0.1)",
+              }}
+            >
+              <div style={{ fontSize: 15, color: "#3f3f3f", padding: "12px 20px" }}>
+                <p><strong>Developers:</strong> {userCounts.developers > 0 ? userCounts.developers : <Text type="secondary">No data</Text>}</p>
+                <p><strong>Team Leads:</strong> {userCounts.teamLeads > 0 ? userCounts.teamLeads : <Text type="secondary">No data</Text>}</p>
+              </div>
+            </Card>
+          </Col>
+        )}
+      </Row>
+
+      <Card
+  title="Recent Uploads"
+  style={{ marginTop: 24 }}
+  extra={
+    role === "team_lead" && (
+      <Button type="primary" onClick={() => navigate("/all-uploads")}>
+        View All Uploads
+      </Button>
+    )
+  }
+>
+        <Table
+          rowKey="upload_id"
+          dataSource={recentUploads}
+          pagination={false}
+          size="middle"
+          bordered
+          locale={{ emptyText: "No recent uploads found" }}
+          onRow={(record) => ({
+            onClick: () => navigate(`/upload/${record.upload_id}`),
+            style: { cursor: "pointer" },
+          })}
+          columns={[
+            {
+              title: "Description",
+              dataIndex: "upload_description",
+              key: "desc",
+              render: (text) => text || <i>No description</i>,
+            },
+            {
+              title: "User",
+              dataIndex: "username",
+              key: "user",
+              render: (u, row) => u || userIdToNameMap[row.user_id] || <i>Unknown</i>,
+            },
+            {
+              title: "Filename",
+              dataIndex: "original_filename",
+              key: "file",
+            },
+            {
+              title: "Files",
+              dataIndex: "num_files",
+              key: "files",
+              align: "center",
+            },
+            {
+              title: "Uploaded",
+              dataIndex: "timestamp",
+              key: "time",
+              render: (t) =>
+                new Date(t).toLocaleString("en-IN", {
+                  timeZone: "Asia/Kolkata",
+                  dateStyle: "medium",
+                  timeStyle: "short",
+                }),
+            },
+          ]}
+        />
+      </Card>
+
+    
     </>
   );
 }
