@@ -51,7 +51,9 @@ const UploadPage = () => {
 
   useEffect(() => {
     if (!uploadId) return;
-    const ws = new WebSocket(`ws://localhost:8080/ws/progress/${uploadId}`);
+    const ws = new WebSocket(
+      `wss://intelligent-bug-triage-system.onrender.com/ws/progress/${uploadId}`
+    );
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.status) setStatus(data.status);
