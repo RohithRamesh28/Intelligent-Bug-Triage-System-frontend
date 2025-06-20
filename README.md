@@ -3,6 +3,7 @@
 This is the React frontend for the Intelligent Bug Triage System. It allows users to upload code projects, view detected bugs and optimization hints, monitor progress in real-time, and manage access via user authentication.
 
 ---
+The backend repo for this repo - https://github.com/RohithRamesh28/Intelligent-Bug-Triage-System.git
 
 ## 📁 Folder Structure
 
