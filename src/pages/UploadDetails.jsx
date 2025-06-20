@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   message,
   Tabs,
@@ -11,11 +11,11 @@ import {
   Button,
   Alert,
   Card,
-} from 'antd';
-import { ArrowLeftOutlined, DownloadOutlined } from '@ant-design/icons';
-import axios from 'axios';
-import Papa from 'papaparse';
-import path from 'path-browserify';
+} from "antd";
+import { ArrowLeftOutlined, DownloadOutlined } from "@ant-design/icons";
+import axios from "axios";
+import Papa from "papaparse";
+import path from "path-browserify";
 
 const { Title, Paragraph } = Typography;
 
@@ -24,8 +24,8 @@ function UploadDetails() {
   const navigate = useNavigate();
   const [bugResults, setBugResults] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [uploadDescription, setUploadDescription] = useState('');
-  const [timestamp, setTimestamp] = useState('');
+  const [uploadDescription, setUploadDescription] = useState("");
+  const [timestamp, setTimestamp] = useState("");
   const { token } = theme.useToken();
 
   useEffect(() => {
@@ -33,21 +33,24 @@ function UploadDetails() {
       fetchBugResults(uploadId);
       fetchUploadMetadata();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uploadId]);
 
   const fetchBugResults = async (id) => {
     try {
-      const response = await axios.get(`http://localhost:8080/file_bugs/${id}`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
+      const response = await axios.get(
+        `https://intelligent-bug-triage-system.onrender.com/file_bugs/${id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
 
       setBugResults(response.data || []);
     } catch (error) {
-      console.error('Error fetching bug results:', error);
-      message.error('Failed to load bug results.');
+      console.error("Error fetching bug results:", error);
+      message.error("Failed to load bug results.");
     } finally {
       setLoading(false);
     }
@@ -55,19 +58,22 @@ function UploadDetails() {
 
   const fetchUploadMetadata = async () => {
     try {
-      const res = await axios.get('http://localhost:8080/project/my-uploads', {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
+      const res = await axios.get(
+        "https://intelligent-bug-triage-system.onrender.com/project/my-uploads",
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
       const uploads = res.data.uploads || [];
       const match = uploads.find((u) => u.upload_id === uploadId);
       if (match) {
-        setUploadDescription(match.upload_description || '');
-        setTimestamp(match.created_at || '');
+        setUploadDescription(match.upload_description || "");
+        setTimestamp(match.created_at || "");
       }
     } catch (err) {
-      console.error('Failed to fetch upload metadata:', err);
+      console.error("Failed to fetch upload metadata:", err);
     }
   };
 
@@ -85,18 +91,18 @@ function UploadDetails() {
       });
     });
     const csv = Papa.unparse(allBugs);
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.setAttribute('download', `upload_${uploadId}_bugs.csv`);
+    link.setAttribute("download", `upload_${uploadId}_bugs.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
   const stripUUID = (filename) => {
-    const parts = filename.split('_');
-    return parts.length > 1 ? parts.slice(1).join('_') : filename;
+    const parts = filename.split("_");
+    return parts.length > 1 ? parts.slice(1).join("_") : filename;
   };
 
   const groupedBugs = bugResults
@@ -108,29 +114,29 @@ function UploadDetails() {
 
   const columns = [
     {
-      title: '#',
-      key: 'index',
+      title: "#",
+      key: "index",
       render: (_, __, index) => index + 1,
     },
     {
-      title: 'Line',
-      dataIndex: 'line',
-      key: 'line',
+      title: "Line",
+      dataIndex: "line",
+      key: "line",
     },
     {
-      title: 'Description',
-      dataIndex: 'description',
-      key: 'description',
+      title: "Description",
+      dataIndex: "description",
+      key: "description",
     },
     {
-      title: 'Priority',
-      dataIndex: 'priority',
-      key: 'priority',
+      title: "Priority",
+      dataIndex: "priority",
+      key: "priority",
       render: (priority) => {
-        let color = 'default';
-        if (priority === 'High') color = 'red';
-        else if (priority === 'Medium') color = 'orange';
-        else if (priority === 'Low') color = 'green';
+        let color = "default";
+        if (priority === "High") color = "red";
+        else if (priority === "Medium") color = "orange";
+        else if (priority === "Low") color = "green";
         return <Tag color={color}>{priority}</Tag>;
       },
     },
@@ -157,7 +163,7 @@ function UploadDetails() {
       <Button
         icon={<ArrowLeftOutlined />}
         onClick={() => navigate(-1)}
-        style={{ marginBottom: '16px' }}
+        style={{ marginBottom: "16px" }}
       >
         Back
       </Button>
@@ -165,19 +171,21 @@ function UploadDetails() {
       <Card variant="borderless">
         <div
           style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
             gap: 8,
           }}
         >
           <div>
             <Title level={2} style={{ margin: 0, color: token.colorText }}>
-              {uploadDescription ? `Upload: ${uploadDescription}` : 'Upload Details'}
+              {uploadDescription
+                ? `Upload: ${uploadDescription}`
+                : "Upload Details"}
             </Title>
             {timestamp && (
-              <Paragraph style={{ color: '#8c8c8c', marginBottom: 0 }}>
+              <Paragraph style={{ color: "#8c8c8c", marginBottom: 0 }}>
                 Uploaded on {new Date(timestamp).toLocaleString()}
               </Paragraph>
             )}
@@ -189,13 +197,13 @@ function UploadDetails() {
             onClick={handleDownloadCSV}
             size="middle"
             style={{
-              backgroundColor: '#1890ff',
-              borderColor: '#1890ff',
-              fontWeight: '500',
-              padding: '0 20px',
-              height: '36px',
-              display: 'flex',
-              alignItems: 'center',
+              backgroundColor: "#1890ff",
+              borderColor: "#1890ff",
+              fontWeight: "500",
+              padding: "0 20px",
+              height: "36px",
+              display: "flex",
+              alignItems: "center",
             }}
             disabled={bugResults.length === 0}
           >
@@ -206,10 +214,10 @@ function UploadDetails() {
         {loading ? (
           <div
             style={{
-              height: '200px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+              height: "200px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
             <Spin size="large" />

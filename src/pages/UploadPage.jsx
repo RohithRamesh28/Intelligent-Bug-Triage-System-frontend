@@ -56,7 +56,8 @@ const UploadPage = () => {
       const data = JSON.parse(event.data);
       if (data.status) setStatus(data.status);
       if (data.progress !== undefined) setProgress(data.progress);
-      if (data.status === "DONE 🚀") {//dont remove the emoji helps the websocket to understand and close 
+      if (data.status === "DONE 🚀") {
+        //dont remove the emoji helps the websocket to understand and close
         setDone(true);
         ws.close();
       }
@@ -68,7 +69,9 @@ const UploadPage = () => {
   useEffect(() => {
     if (done && uploadId) {
       axios
-        .get(`http://localhost:8080/file_bugs/${uploadId}`)
+        .get(
+          `https://intelligent-bug-triage-system.onrender.com/file_bugs/${uploadId}`
+        )
         .then((res) => {
           setBugResults(res.data || []);
           setUploadId(null);
@@ -109,12 +112,16 @@ const UploadPage = () => {
 
     setUploading(true);
     try {
-      const res = await axios.post("http://localhost:8080/upload/", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
+      const res = await axios.post(
+        "https://intelligent-bug-triage-system.onrender.com/upload/",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
       setUploadId(res.data.upload_id);
       setStatus("Waiting for analysis...");
       message.success("Upload started!");
@@ -248,22 +255,30 @@ const UploadPage = () => {
             )}
           </div>
 
-<div style={{ display: 'flex', justifyContent: 'flex-end', width: '100%' }}>
-  <Button
-    type="primary"
-    onClick={handleSubmit}
-    disabled={fileList.length === 0 || uploading || (uploadId && !done)}
-    loading={uploading}
-    style={{
-      padding: '4px 16px',
-      fontSize: 14,
-      height: 36,
-      borderRadius: 6,
-      marginTop: 8,
-    }}
-  >
-            {uploading ? "Uploading..." : "Submit"}
-          </Button>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              width: "100%",
+            }}
+          >
+            <Button
+              type="primary"
+              onClick={handleSubmit}
+              disabled={
+                fileList.length === 0 || uploading || (uploadId && !done)
+              }
+              loading={uploading}
+              style={{
+                padding: "4px 16px",
+                fontSize: 14,
+                height: 36,
+                borderRadius: 6,
+                marginTop: 8,
+              }}
+            >
+              {uploading ? "Uploading..." : "Submit"}
+            </Button>
           </div>
 
           {uploadId && (
