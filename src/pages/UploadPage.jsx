@@ -51,7 +51,7 @@ const UploadPage = () => {
       const data = JSON.parse(event.data);
       if (data.status) setStatus(data.status);
       if (data.progress !== undefined) setProgress(data.progress);
-      if (data.status === 'DONE 🚀') {
+      if (data.status === 'DONE ANALYSIS') {
         setDone(true);
         ws.close();
       }
@@ -71,7 +71,7 @@ const UploadPage = () => {
           setProgress(0);
           setStatus('No upload started yet.');
         })
-        .catch((err) => console.error('❌ Failed to fetch bugs:', err));
+        .catch((err) => console.error(' Failed to fetch bugs:', err));
     }
   }, [done, uploadId]);
 
@@ -172,7 +172,8 @@ const UploadPage = () => {
     fileList,
     onChange: ({ fileList: newList }) => setFileList(newList),
     beforeUpload: () => false,
-    accept: '.zip,.js,.jsx,.ts,.tsx,.py',
+    accept: '.zip,.js,.jsx,.ts,.tsx,.py,.java,.cpp,.c,.cs,.rb,.go,.rs,.php,.swift,.kt,.m,.scala',
+
     listType: 'text',
   };
 
@@ -191,7 +192,7 @@ const UploadPage = () => {
                 <InboxOutlined />
               </p>
               <p className="ant-upload-text">Click or drag ZIP / code files here</p>
-              <p className="ant-upload-hint">Supports ZIP, JS, TS, JSX, PY files</p>
+              <p className="ant-upload-hint">Supports ZIPS,FILES</p>
             </Dragger>
             {fileError && <Alert message={fileError} type="error" showIcon className="mt-2" />}
           </div>

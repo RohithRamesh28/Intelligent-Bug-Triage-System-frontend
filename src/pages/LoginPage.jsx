@@ -58,10 +58,7 @@ function LoginPage() {
           <div style={{ fontSize: 32, fontWeight: 600, color: '#3f3f3f' }}>
             Bug Triage System
           </div>
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: 8 }}>
-            <FiLogIn size={20} style={{ marginRight: 8, color: '#1890ff' }} />
-            <Title level={4} style={{ marginBottom: 0, color: '#3f3f3f' }}>Welcome Back</Title>
-          </div>
+    
         </div>
 
         <Form layout="vertical" onFinish={onFinish} size="middle">
