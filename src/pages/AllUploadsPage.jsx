@@ -39,6 +39,7 @@ function AllUploadsPage() {
   const { token } = theme.useToken();
 
   useEffect(() => {
+    console.log("Fetching all uploads...", api.get("/project/dashboard"));
     const fetchAllUploads = async () => {
       try {
         const res = await api.get("/project/dashboard");
@@ -75,8 +76,11 @@ function AllUploadsPage() {
       const total = high + medium + low;
       const files = item.num_files || 1;
 
-      const matchesDescription = item.upload_description?.toLowerCase().includes(searchText.toLowerCase());
-      const matchesUser = selectedUser === "all" || item.username === selectedUser;
+      const matchesDescription = item.upload_description
+        ?.toLowerCase()
+        .includes(searchText.toLowerCase());
+      const matchesUser =
+        selectedUser === "all" || item.username === selectedUser;
 
       return (
         matchesDescription &&
@@ -110,7 +114,14 @@ function AllUploadsPage() {
   };
 
   const renderFilterGroup = (label, operator, setOperator, value, setValue) => (
-    <Space size={0} style={{ border: "1px solid #d9d9d9", borderRadius: 6, overflow: "hidden" }}>
+    <Space
+      size={0}
+      style={{
+        border: "1px solid #d9d9d9",
+        borderRadius: 6,
+        overflow: "hidden",
+      }}
+    >
       <Select
         value={operator}
         onChange={setOperator}
@@ -142,11 +153,13 @@ function AllUploadsPage() {
           const medium = countBugsByPriority(bugs, "Medium");
           const low = countBugsByPriority(bugs, "Low");
           const total = high + medium + low;
-          
+
           const fileNames = item.file_names || [];
 
           const formattedDescription =
-            (item.upload_description || "No description provided").charAt(0).toUpperCase() +
+            (item.upload_description || "No description provided")
+              .charAt(0)
+              .toUpperCase() +
             (item.upload_description || "No description provided").slice(1);
 
           return (
@@ -157,7 +170,9 @@ function AllUploadsPage() {
                     <div style={{ fontWeight: 600, fontSize: "16px" }}>
                       {formattedDescription}
                     </div>
-                    <div style={{ borderTop: "1px solid #d9d9d9", marginTop: 8 }} />
+                    <div
+                      style={{ borderTop: "1px solid #d9d9d9", marginTop: 8 }}
+                    />
                   </div>
                 }
                 hoverable
@@ -179,13 +194,23 @@ function AllUploadsPage() {
                 </div>
                 <div style={{ marginBottom: 10 }}>
                   <Text strong>Filename:</Text>{" "}
-                  <Text>{stripUUID(fileNames[0] || item.original_filename || "Unknown")}</Text>
+                  <Text>
+                    {stripUUID(
+                      fileNames[0] || item.original_filename || "Unknown"
+                    )}
+                  </Text>
                 </div>
-                <div style={{ borderTop: "1px solid #d9d9d9", margin: "12px 0" }} />
+                <div
+                  style={{ borderTop: "1px solid #d9d9d9", margin: "12px 0" }}
+                />
                 <div>
                   <Text strong>Bugs → </Text>
-                  <span style={{ color: "#ff4d4f", marginRight: 8 }}>High: {high}</span>
-                  <span style={{ color: "#faad14", marginRight: 8 }}>Medium: {medium}</span>
+                  <span style={{ color: "#ff4d4f", marginRight: 8 }}>
+                    High: {high}
+                  </span>
+                  <span style={{ color: "#faad14", marginRight: 8 }}>
+                    Medium: {medium}
+                  </span>
                   <span style={{ color: "#52c41a" }}>Low: {low}</span>
                 </div>
               </Card>
@@ -197,7 +222,9 @@ function AllUploadsPage() {
 
   return (
     <div style={{ padding: "24px" }}>
-      <Title level={2} style={{ color: token.colorText }}>All Uploads</Title>
+      <Title level={2} style={{ color: token.colorText }}>
+        All Uploads
+      </Title>
       <Text type="secondary">
         Filter uploads by description, user, bugs, or file count.
       </Text>
@@ -218,7 +245,11 @@ function AllUploadsPage() {
           onChange={(e) => setSearchText(e.target.value)}
           style={{ width: 200 }}
         />
-        <Select value={selectedUser} onChange={setSelectedUser} style={{ width: 140 }}>
+        <Select
+          value={selectedUser}
+          onChange={setSelectedUser}
+          style={{ width: 140 }}
+        >
           {uniqueUsers.map((user) => (
             <Option key={user} value={user}>
               {user === "all" ? "All Users" : user}
@@ -226,11 +257,41 @@ function AllUploadsPage() {
           ))}
         </Select>
 
-        {renderFilterGroup("Files", fileOperator, setFileOperator, fileValue, setFileValue)}
-        {renderFilterGroup("Total", totalOperator, setTotalOperator, totalValue, setTotalValue)}
-        {renderFilterGroup("High", highOperator, setHighOperator, highValue, setHighValue)}
-        {renderFilterGroup("Med", mediumOperator, setMediumOperator, mediumValue, setMediumValue)}
-        {renderFilterGroup("Low", lowOperator, setLowOperator, lowValue, setLowValue)}
+        {renderFilterGroup(
+          "Files",
+          fileOperator,
+          setFileOperator,
+          fileValue,
+          setFileValue
+        )}
+        {renderFilterGroup(
+          "Total",
+          totalOperator,
+          setTotalOperator,
+          totalValue,
+          setTotalValue
+        )}
+        {renderFilterGroup(
+          "High",
+          highOperator,
+          setHighOperator,
+          highValue,
+          setHighValue
+        )}
+        {renderFilterGroup(
+          "Med",
+          mediumOperator,
+          setMediumOperator,
+          mediumValue,
+          setMediumValue
+        )}
+        {renderFilterGroup(
+          "Low",
+          lowOperator,
+          setLowOperator,
+          lowValue,
+          setLowValue
+        )}
       </div>
 
       {renderUploads(filteredUploads)}
