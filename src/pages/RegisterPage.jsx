@@ -1,5 +1,13 @@
 import { useState, useEffect } from "react";
-import { Button, Form, Input, Select, Typography, message, Card } from "antd";
+import {
+  Button,
+  Form,
+  Input,
+  Select,
+  Typography,
+  message,
+  Card,
+} from "antd";
 import { useNavigate, Link } from "react-router-dom";
 import { FiUserPlus } from "react-icons/fi";
 import api from "../api";
@@ -9,6 +17,7 @@ const { Title, Text } = Typography;
 function RegisterPage() {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [form] = Form.useForm();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -16,8 +25,8 @@ function RegisterPage() {
       try {
         const res = await api.get("/projects/list");
         setProjects(res.data.projects);
-      } catch (err) {
-        message.error("Failed to load projects.",err);
+      } catch {
+        message.error("Failed to load projects.");
       }
     };
     fetchProjects();
@@ -25,17 +34,51 @@ function RegisterPage() {
 
   const onFinish = async (values) => {
     setLoading(true);
+
+    const username = values.username.trim().toLowerCase();
+    const password = values.password.trim();
+
+    if (password.length < 6) {
+      form.setFields([
+        {
+          name: "password",
+          errors: ["Password must be at least 6 characters."],
+        },
+      ]);
+      setLoading(false);
+      return;
+    }
+
     try {
       await api.post("/register", {
-        username: values.username,
-        password: values.password,
+        username,
+        password,
         project_id: values.project_id,
         role: values.role,
       });
+
       message.success("Registration successful! Please login.");
       navigate("/");
     } catch (err) {
-      message.error(err.response?.data?.detail || "Registration failed.");
+      const detail = err.response?.data?.detail;
+
+      if (detail?.includes("Username already exists")) {
+        form.setFields([
+          {
+            name: "username",
+            errors: ["Username already exists for this role and project."],
+          },
+        ]);
+      } else if (detail?.includes("Invalid project_id")) {
+        form.setFields([
+          {
+            name: "project_id",
+            errors: ["Selected project does not exist."],
+          },
+        ]);
+      } else {
+        message.error("Registration failed. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -67,17 +110,38 @@ function RegisterPage() {
           <div style={{ fontSize: 32, fontWeight: 600, color: "#3f3f3f" }}>
             Bug Triage System
           </div>
-          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", marginTop: 8 }}>
-            <FiUserPlus size={20} style={{ marginRight: 8, color: "#1890ff" }} />
-            <Title level={4} style={{ marginBottom: 0, color: "#3f3f3f" }}>Create Your Account</Title>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              marginTop: 8,
+            }}
+          >
+            <FiUserPlus
+              size={20}
+              style={{ marginRight: 8, color: "#1890ff" }}
+            />
+            <Title level={4} style={{ marginBottom: 0, color: "#3f3f3f" }}>
+              Create Your Account
+            </Title>
           </div>
         </div>
 
-        <Form layout="vertical" onFinish={onFinish} size="middle">
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={onFinish}
+          size="middle"
+          scrollToFirstError
+        >
           <Form.Item
             name="username"
             label="Username"
-            rules={[{ required: true, message: "Please enter a username" }]}
+            rules={[
+              { required: true, message: "Please enter a username" },
+              { whitespace: true, message: "Username cannot be empty" },
+            ]}
           >
             <Input placeholder="Choose a username" autoComplete="username" />
           </Form.Item>
@@ -87,7 +151,10 @@ function RegisterPage() {
             label="Password"
             rules={[{ required: true, message: "Please enter a password" }]}
           >
-            <Input.Password placeholder="Create a password" autoComplete="new-password" />
+            <Input.Password
+              placeholder="Create a password"
+              autoComplete="new-password"
+            />
           </Form.Item>
 
           <Form.Item

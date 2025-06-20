@@ -37,7 +37,7 @@ function ProjectCreatePage() {
       }}
     >
       <Card
-        bordered={false}
+        variant="borderless"
         style={{
           width: '100%',
           maxWidth: 440,

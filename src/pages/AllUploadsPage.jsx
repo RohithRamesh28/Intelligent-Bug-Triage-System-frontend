@@ -61,6 +61,11 @@ function AllUploadsPage() {
     });
   }, [uploads, searchText, selectedUser]);
 
+  const stripUUID = (filename) => {
+    const parts = filename.split('_');
+    return parts.length > 1 ? parts.slice(1).join('_') : filename;
+  };
+
   const renderUploads = (items) =>
     loading ? (
       <Skeleton active paragraph={{ rows: 8 }} style={{ marginTop: 24 }} />
@@ -105,7 +110,7 @@ function AllUploadsPage() {
                       content={
                         <div style={{ maxHeight: 150, overflowY: 'auto', maxWidth: 300 }}>
                           {fileNames.map((name, idx) => (
-                            <div key={idx} style={{ marginBottom: 4 }}>{name}</div>
+                            <div key={idx} style={{ marginBottom: 4 }}>{stripUUID(name)}</div>
                           ))}
                         </div>
                       }
@@ -116,7 +121,7 @@ function AllUploadsPage() {
                       </Text>
                     </Popover>
                   ) : (
-                    <Text>{fileNames[0] || item.original_filename || 'Unknown'}</Text>
+                    <Text>{stripUUID(fileNames[0] || item.original_filename || 'Unknown')}</Text>
                   )}
                 </div>
 
@@ -127,7 +132,7 @@ function AllUploadsPage() {
                       content={
                         <div style={{ maxHeight: 150, overflowY: 'auto', maxWidth: 300 }}>
                           {fileNames.map((name, idx) => (
-                            <div key={idx} style={{ marginBottom: 4 }}>{name}</div>
+                            <div key={idx} style={{ marginBottom: 4 }}>{stripUUID(name)}</div>
                           ))}
                         </div>
                       }

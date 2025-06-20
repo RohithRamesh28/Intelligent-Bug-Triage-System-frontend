@@ -21,7 +21,7 @@ function DashboardLayout({ children }) {
     localStorage.removeItem('token');
     localStorage.removeItem('user_id');
     localStorage.removeItem('project_id');
-    localStorage.removeItem('role'); // ✅ Also remove role
+    localStorage.removeItem('role'); 
     navigate('/');
   };
 
@@ -35,10 +35,10 @@ function DashboardLayout({ children }) {
     }
   };
 
-  // Get role from localStorage (default to developer)
+ 
   const role = localStorage.getItem('role') || 'developer';
 
-  // Determine visible menu items based on role
+
   const mainMenuItems = useMemo(() => {
     const items = [
       { key: 'profile', icon: <UserOutlined />, label: 'Profile' },
@@ -52,14 +52,14 @@ function DashboardLayout({ children }) {
       );
     }
 
-    if (role === 'team_lead') {
-      items.push(
-        { key: 'all-uploads', icon: <FolderOpenOutlined />, label: 'All Uploads' }
-      );
-    }
+      if (role === 'team_lead') {
+        items.push(
+          { key: 'all-uploads', icon: <FolderOpenOutlined />, label: 'All Uploads' }
+        );
+      }
 
-    return items;
-  }, [role]);
+      return items;
+    }, [role]);
 
   const currentPath = location.pathname;
   const currentPage = currentPath.startsWith('/profile')
@@ -115,7 +115,7 @@ function DashboardLayout({ children }) {
                 type: 'group',
                 label: '',
                 children: [
-                  { key: 'settings', icon: <SettingOutlined />, label: 'Settings' },
+                  // { key: 'settings', icon: <SettingOutlined />, label: 'Settings' },
                   { key: 'logout', icon: <LogoutOutlined />, label: 'Logout' },
                 ],
               },

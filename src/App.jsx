@@ -17,7 +17,7 @@ import SettingsPage from "./pages/SettingsPage";
 import UploadDetails from "./pages/UploadDetails";
 
 function App() {
-  // ⬇ Persist dark mode across reloads
+
   const [isDarkMode, setIsDarkMode] = useState(() => {
     return localStorage.getItem("darkMode") === "true";
   });

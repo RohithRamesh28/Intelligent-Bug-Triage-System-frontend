@@ -3,7 +3,7 @@ import { Form, Input, Button, message as antMessage, Skeleton, Typography } from
 import { FiUser } from 'react-icons/fi';
 import api from '../api';
 
-const { Title, Text } = Typography;
+const {  Text } = Typography;
 
 function ProfilePage() {
   const [form] = Form.useForm();

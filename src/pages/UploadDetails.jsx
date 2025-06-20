@@ -70,10 +70,13 @@ function UploadDetails() {
     link.click();
     document.body.removeChild(link);
   };
-
+  const stripUUID = (filename) => {
+  const parts = filename.split('_');
+  return parts.length > 1 ? parts.slice(1).join('_') : filename;
+};
   const groupedBugs = bugResults
     .map(({ file_path, bugs }) => {
-      const label = path.basename(file_path); // ✅ Only file name
+      const label = stripUUID(path.basename(file_path)); 
       return { label, bugs: bugs || [] };
     })
     .sort((a, b) => b.bugs.length - a.bugs.length);
@@ -133,7 +136,7 @@ function UploadDetails() {
         Back
       </Button>
 
-      <Card bordered={false}>
+      <Card variant="borderless">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Title level={2} style={{ margin: 0, color: token.colorText }}>
             Upload Details — Bugs

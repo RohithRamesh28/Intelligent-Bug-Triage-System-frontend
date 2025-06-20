@@ -16,6 +16,10 @@ import {
 import { InboxOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import path from 'path-browserify';
+const cleanFilename = (name) => {
+  const parts = name.split('_');
+  return parts.length > 1 ? parts.slice(1).join('_') : name;
+};
 
 const { Dragger } = Upload;
 const { TextArea } = Input;
@@ -51,7 +55,7 @@ const UploadPage = () => {
       const data = JSON.parse(event.data);
       if (data.status) setStatus(data.status);
       if (data.progress !== undefined) setProgress(data.progress);
-      if (data.status === 'DONE ANALYSIS') {
+      if (data.status === 'DONE 🚀') {
         setDone(true);
         ws.close();
       }
@@ -121,12 +125,13 @@ const UploadPage = () => {
     }
   };
 
-  const groupedBugs = bugResults
-    .map(({ zip_name, file_path, bugs }) => {
-      const filename = path.basename(file_path);
-      const display = zip_name ? `${zip_name}/${filename}` : filename;
-      return { label: display, bugs: bugs || [] };
-    })
+const groupedBugs = bugResults
+  .map(({ zip_name, file_path, bugs }) => {
+    const rawFilename = path.basename(file_path);
+    const filename = cleanFilename(rawFilename);  
+    const display = zip_name ? `${zip_name}/${filename}` : filename;
+    return { label: display, bugs: bugs || [] };
+  })
     .sort((a, b) => b.bugs.length - a.bugs.length);
 
   const columns = [
@@ -179,7 +184,7 @@ const UploadPage = () => {
 
   return (
     <div className="max-w-5xl mx-auto py-8 px-4">
-      <Card bordered={false} style={{ marginBottom: '24px' }}>
+      <Card variant="borderless" style={{ marginBottom: '24px' }}>
         <Title level={2} className="text-center">Upload Files for Bug Analysis</Title>
         <Space direction="vertical" size="large" style={{ width: '100%' }}>
           <div>
@@ -231,7 +236,7 @@ const UploadPage = () => {
       </Card>
 
       {bugTabs.length > 0 && (
-        <Card title="Bug Results" bordered={false}>
+        <Card title="Bug Results" variant="borderless">
           <Tabs defaultActiveKey={bugTabs[0].key} type="card" items={bugTabs} />
         </Card>
       )}

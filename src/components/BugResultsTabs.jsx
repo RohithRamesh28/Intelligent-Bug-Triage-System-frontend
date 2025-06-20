@@ -2,7 +2,7 @@ import { Tabs, Table, Tag } from 'antd';
 import React from 'react';
 
 const BugResultsTabs = ({ bugResults }) => {
-  // Group bugs by file (file_path + file_name as unique key)
+  
   const groupedBugs = bugResults.reduce((acc, bug) => {
     const fileKey = `${bug.file_path}/${bug.file_name}`;
     if (!acc[fileKey]) {
@@ -12,7 +12,7 @@ const BugResultsTabs = ({ bugResults }) => {
     return acc;
   }, {});
 
-  // Table columns
+
   const columns = [
     {
       title: 'Line',
