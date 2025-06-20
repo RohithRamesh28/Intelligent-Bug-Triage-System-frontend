@@ -1,16 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ResponsiveContainer } from "recharts";
 
-import {
-  Spin,
-  Card,
-  Row,
-  Col,
-  Table,
-  Button,
-  Typography,
-  message,
-} from "antd";
+import { Spin, Card, Row, Col, Table, Button, Typography, message } from "antd";
 import {
   PieChart,
   Pie,
@@ -43,6 +34,12 @@ function Dashboard() {
   const role = localStorage.getItem("role");
 
   useEffect(() => {
+    console.log(
+      "Fetching dashboard data for project:",
+      projectId,
+      "role:",
+      role
+    );
     const fetchDashboard = async () => {
       try {
         const uploadRes =
@@ -147,28 +144,53 @@ function Dashboard() {
         <Col xs={24} sm={12} md={8} lg={6}>
           <Card title="Total Uploads" style={{ backgroundColor: "#e6fffb" }}>
             <Title level={2}>
-              {totalUploads > 0 ? totalUploads : <Text type="secondary">No Uploads yet</Text>}
+              {totalUploads > 0 ? (
+                totalUploads
+              ) : (
+                <Text type="secondary">No Uploads yet</Text>
+              )}
             </Title>
           </Card>
         </Col>
         <Col xs={24} sm={12} md={8} lg={6}>
-          <Card title="High Priority Bugs" style={{ backgroundColor: "#fff1f0" }}>
+          <Card
+            title="High Priority Bugs"
+            style={{ backgroundColor: "#fff1f0" }}
+          >
             <Title level={2}>
-              {highBugs > 0 ? highBugs : <Text type="secondary">No Bugs yet</Text>}
-            </Title>
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={8} lg={6}>   
-          <Card title="Medium Priority Bugs" style={{ backgroundColor: "#fffbe6" }}>
-            <Title level={2}>
-              {mediumBugs > 0 ? mediumBugs : <Text type="secondary">No Bugs yet</Text>}
+              {highBugs > 0 ? (
+                highBugs
+              ) : (
+                <Text type="secondary">No Bugs yet</Text>
+              )}
             </Title>
           </Card>
         </Col>
         <Col xs={24} sm={12} md={8} lg={6}>
-          <Card title="Low Priority Bugs" style={{ backgroundColor: "#f6ffed" }}>
+          <Card
+            title="Medium Priority Bugs"
+            style={{ backgroundColor: "#fffbe6" }}
+          >
             <Title level={2}>
-              {lowBugs > 0 ? lowBugs : <Text type="secondary">No Bugs yet</Text>}
+              {mediumBugs > 0 ? (
+                mediumBugs
+              ) : (
+                <Text type="secondary">No Bugs yet</Text>
+              )}
+            </Title>
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={8} lg={6}>
+          <Card
+            title="Low Priority Bugs"
+            style={{ backgroundColor: "#f6ffed" }}
+          >
+            <Title level={2}>
+              {lowBugs > 0 ? (
+                lowBugs
+              ) : (
+                <Text type="secondary">No Bugs yet</Text>
+              )}
             </Title>
           </Card>
         </Col>
@@ -194,10 +216,17 @@ function Dashboard() {
                     label={({ name, value }) => `${name}: ${value}`}
                   >
                     {bugsPieData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={COLORS[index % COLORS.length]}
+                      />
                     ))}
                   </Pie>
-                  <Legend layout="vertical" align="right" verticalAlign="middle" />
+                  <Legend
+                    layout="vertical"
+                    align="right"
+                    verticalAlign="middle"
+                  />
                   <ReTooltip />
                 </PieChart>
               </ResponsiveContainer>
@@ -218,10 +247,17 @@ function Dashboard() {
                   <XAxis dataKey="user" />
                   <YAxis />
                   <ReTooltip />
-                  <Legend layout="vertical" align="right" verticalAlign="middle" />
+                  <Legend
+                    layout="vertical"
+                    align="right"
+                    verticalAlign="middle"
+                  />
                   <Bar dataKey="uploads">
                     {uploadsBarData.map((entry, index) => (
-                      <Cell key={`bar-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                      <Cell
+                        key={`bar-${index}`}
+                        fill={CHART_COLORS[index % CHART_COLORS.length]}
+                      />
                     ))}
                   </Bar>
                 </BarChart>
@@ -233,7 +269,11 @@ function Dashboard() {
         {role === "team_lead" && (
           <Col xs={24} md={8}>
             <Card
-              title={<span><TeamOutlined /> Team Overview</span>}
+              title={
+                <span>
+                  <TeamOutlined /> Team Overview
+                </span>
+              }
               style={{
                 backgroundColor: "#f0e9ff",
                 height: "100%",
@@ -241,9 +281,25 @@ function Dashboard() {
                 boxShadow: "0 4px 12px rgba(108, 0, 255, 0.1)",
               }}
             >
-              <div style={{ fontSize: 15, color: "#3f3f3f", padding: "12px 20px" }}>
-                <p><strong>Developers:</strong> {userCounts.developers > 0 ? userCounts.developers : <Text type="secondary">No data</Text>}</p>
-                <p><strong>Team Leads:</strong> {userCounts.teamLeads > 0 ? userCounts.teamLeads : <Text type="secondary">No data</Text>}</p>
+              <div
+                style={{ fontSize: 15, color: "#3f3f3f", padding: "12px 20px" }}
+              >
+                <p>
+                  <strong>Developers:</strong>{" "}
+                  {userCounts.developers > 0 ? (
+                    userCounts.developers
+                  ) : (
+                    <Text type="secondary">No data</Text>
+                  )}
+                </p>
+                <p>
+                  <strong>Team Leads:</strong>{" "}
+                  {userCounts.teamLeads > 0 ? (
+                    userCounts.teamLeads
+                  ) : (
+                    <Text type="secondary">No data</Text>
+                  )}
+                </p>
               </div>
             </Card>
           </Col>
@@ -251,16 +307,16 @@ function Dashboard() {
       </Row>
 
       <Card
-  title="Recent Uploads"
-  style={{ marginTop: 24 }}
-  extra={
-    role === "team_lead" && (
-      <Button type="primary" onClick={() => navigate("/all-uploads")}>
-        View All Uploads
-      </Button>
-    )
-  }
->
+        title="Recent Uploads"
+        style={{ marginTop: 24 }}
+        extra={
+          role === "team_lead" && (
+            <Button type="primary" onClick={() => navigate("/all-uploads")}>
+              View All Uploads
+            </Button>
+          )
+        }
+      >
         <Table
           rowKey="upload_id"
           dataSource={recentUploads}
@@ -283,7 +339,8 @@ function Dashboard() {
               title: "User",
               dataIndex: "username",
               key: "user",
-              render: (u, row) => u || userIdToNameMap[row.user_id] || <i>Unknown</i>,
+              render: (u, row) =>
+                u || userIdToNameMap[row.user_id] || <i>Unknown</i>,
             },
             {
               title: "Filename",
@@ -310,8 +367,6 @@ function Dashboard() {
           ]}
         />
       </Card>
-
-    
     </>
   );
 }
